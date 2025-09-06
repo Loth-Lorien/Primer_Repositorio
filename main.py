@@ -1,24 +1,41 @@
-from fastapi import FastAPI
-from uvicorn import run
-app = FastAPI()
 
-@app.get("/inicio")
-def inicio():
-    return "Bienvenido a la api rest de eventos"
+from fastapi import FastAPI, Request
+from uvicorn import run
+from dao.database import Conexion
+from dao.EventosDAO import EventosDAO
+from models.EventosModel import vEventos
+
+app = FastAPI()
+@app.on_event("startup")
+async def startup_event():
+    conexion = Conexion()
+    session = conexion.getSession()
+    app.session = session
+    print("Conexión exitosa a la base de datos")
+
+@app.get("/")
+async def inicio():
+    return "Bienvenido a la API REST de EVENTOS"
 
 @app.post("/eventos")
-async def crear_evento():
-    return "Crear un evento"
+async def crearEvento():
+    return {"mensaje":"Creando un evento"}
 
 @app.put("/eventos")
-async def Modificar_eventos():
-    return "Modificar un evento"
-@app.delete("/eventos")
-async def Eliminar_eventos():
-    return "Eliminar un evento" 
+async def modificarEvento():
+    return {"mensaje":"Editando un evento"}
+
+@app.get("/eventos",response_model=list[vEventos],tags=["Eventos"],summary="Consulta de eventos")
+async def consultarEventos(request : Request)->list[vEventos]:
+    eDAO=EventosDAO(request.app.session)
+    return eDAO.consultar()
+
 @app.get("/eventos/{idEvento}")
-async def optener_eventos(idEvento:int):
-    return "optener evento con id: {idEvento}"
+async def consultaIndividual(idEvento:int):
+    return {"mensaje":f'Consultando el evento con id:{idEvento}'}
+@app.delete("/eventos")
+async def eliminarEvento():
+    return {"mensaje":"Eliminando un evento"}
 
 if __name__ == "__main__":
     import uvicorn
